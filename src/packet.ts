@@ -28,7 +28,7 @@ export type MessagePacket<MessageType> = {
 
 export type Packet<MessageType> = ControlPacket | MessagePacket<MessageType>;
 
-export const PacketSerializer = <MessageType>(
+export const buildSerializer = <MessageType>(
   MessageSchema: JTDSchemaType<MessageType>
 ) => {
   const PacketSchema = {
