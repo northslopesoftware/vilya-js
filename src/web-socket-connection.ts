@@ -1,5 +1,6 @@
 import { ConnectionError, Packet } from ".";
 import { v4 as uuid } from "uuid";
+import wsWebSocket from "ws";
 
 export type MessageResolver<MessageType> = {
   resolve: (message?: MessageType) => void;
@@ -14,7 +15,7 @@ export type MessageListener<T> = (
 ) => void;
 
 export class WebSocketConnection<MessageType> {
-  protected ws?: WebSocket;
+  protected ws?: WebSocket | wsWebSocket;
   protected timeoutMs;
   protected url?: string;
 
