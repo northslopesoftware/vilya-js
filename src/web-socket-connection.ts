@@ -45,10 +45,12 @@ export class WebSocketConnection<MessageType> {
     timeoutMs?: number;
     parse?: Parser<MessageType>;
     serialize?: Serializer<MessageType>;
+    ws?: WebSocket;
   }) {
     this.timeoutMs = options?.timeoutMs || 60000;
     this.serialize = options?.serialize || JSON.stringify;
     this.parse = options?.parse || JSON.parse;
+    this.ws = options?.ws;
 
     if (options?.url) {
       this.connect(options.url);
