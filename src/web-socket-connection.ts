@@ -46,7 +46,7 @@ export class WebSocketConnection<MessageType> {
     timeoutMs?: number;
     parse?: Parser<MessageType>;
     serialize?: Serializer<MessageType>;
-    ws?: WebSocket;
+    ws?: WebSocket | wsWebSocket;
   }) {
     this.timeoutMs = options?.timeoutMs || 60000;
     this.serialize = options?.serialize || JSON.stringify;
