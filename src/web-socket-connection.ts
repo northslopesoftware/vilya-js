@@ -191,7 +191,7 @@ export class WebSocketConnection<MessageType> {
   }
 
   /**
-   * Send a message throught the websocket.
+   * Send a message and return a Promise to wait for the response.
    *
    * This method handles putting the message in a message packet and
    * transmitting it.
@@ -199,7 +199,7 @@ export class WebSocketConnection<MessageType> {
    * @param message The message to send.
    * @returns A promise that resolves when the message is answered.
    */
-  public send(message: MessageType): Promise<MessageType | undefined> {
+  public request(message: MessageType): Promise<MessageType | undefined> {
     const messageId = uuid();
     const packet: Packet<MessageType> = {
       packetType: "message",
@@ -217,6 +217,24 @@ export class WebSocketConnection<MessageType> {
 
     this.transmit(packet);
     return promise;
+  }
+
+  /**
+   * Send a message and do not wait for a response.
+   *
+   * This method handles putting the message in a message packet and
+   * transmitting it.
+   *
+   * @param message the message to send
+   */
+  public send(message: MessageType): void {
+    const packet: Packet<MessageType> = {
+      packetType: "message",
+      messageId: undefined,
+      message,
+    };
+
+    this.transmit(packet);
   }
 
   /**
