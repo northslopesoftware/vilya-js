@@ -9,7 +9,7 @@ export type MessageResolver<MessageType> = {
 
 export type Parser<T> = (data: string) => Packet<T> | undefined;
 export type Serializer<T> = (t: Packet<T>) => string;
-export type MessageListener<T> = (message: T) => void;
+export type MessageListener<T> = (message: T) => void | Promise<void>;
 
 export class WebSocketConnection<MessageType> {
   protected ws?: WebSocket | wsWebSocket;
@@ -143,12 +143,7 @@ export class WebSocketConnection<MessageType> {
    *
    * @param listener The function to run when a message is received
    */
-  public addMessageListener(
-    listener: (
-      msg: MessageType,
-      resolver?: MessageResolver<MessageType>
-    ) => void
-  ) {
+  public addMessageListener(listener: MessageListener<MessageType>) {
     this.messageListeners.push(listener);
   }
 
@@ -184,7 +179,11 @@ export class WebSocketConnection<MessageType> {
     }
 
     if (packet.packetType === "message") {
-      this.messageListeners.forEach((m) => m(packet.message));
+      this.messageListeners.forEach((m) => {
+        m(packet.message)?.catch(() => {
+          throw new Error("Handler failed");
+        });
+      });
     } else if (packet.packetType === "control") {
       throw new Error("not implemented");
     }
@@ -231,10 +230,11 @@ export class WebSocketConnection<MessageType> {
    *
    * @param message the message to send
    */
-  public send(message: MessageType, respondsTo: string = ""): void {
+  public send(message: MessageType, respondsTo?: string): void {
     const packet: Packet<MessageType> = {
       packetType: "message",
       messageId: randomUUID(),
+      respondsTo,
       message,
     };
 

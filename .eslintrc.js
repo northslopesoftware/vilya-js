@@ -10,8 +10,6 @@ module.exports = {
   extends: [
     "plugin:@typescript-eslint/recommended",
     "plugin:@typescript-eslint/recommended-requiring-type-checking",
-    "plugin:react/recommended",
-    "plugin:react/jsx-runtime",
     "prettier",
   ],
   parser: "@typescript-eslint/parser",
@@ -23,13 +21,8 @@ module.exports = {
     "eslint-plugin-jsdoc",
     "eslint-plugin-prefer-arrow",
     "@typescript-eslint",
-    "react",
   ],
-  settings: {
-    react: {
-      version: "detect",
-    },
-  },
+  settings: {},
   root: true,
   rules: {
     "@typescript-eslint/adjacent-overload-signatures": "error",
