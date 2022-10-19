@@ -1,6 +1,6 @@
 import { ConnectionError, Packet } from ".";
-import { v4 as uuid } from "uuid";
 import wsWebSocket from "ws";
+import { randomUUID } from "crypto";
 
 export type MessageResolver<MessageType> = {
   resolve: (message?: MessageType) => void;
@@ -9,10 +9,7 @@ export type MessageResolver<MessageType> = {
 
 export type Parser<T> = (data: string) => Packet<T> | undefined;
 export type Serializer<T> = (t: Packet<T>) => string;
-export type MessageListener<T> = (
-  message: T,
-  resolver: MessageResolver<T> | undefined
-) => void;
+export type MessageListener<T> = (message: T) => void;
 
 export class WebSocketConnection<MessageType> {
   protected ws?: WebSocket | wsWebSocket;
@@ -167,7 +164,11 @@ export class WebSocketConnection<MessageType> {
    * Send a control packet with a "ping" payload.
    */
   protected ping() {
-    this.transmit({ packetType: "control", payload: { type: "ping" } });
+    this.transmit({
+      packetType: "control",
+      messageId: randomUUID(),
+      payload: { type: "ping" },
+    });
   }
 
   /**
@@ -182,12 +183,14 @@ export class WebSocketConnection<MessageType> {
       throw new Error("Invalid packet received");
     }
 
-    if (packet.packetType === "message" && packet.messageId) {
-      const msgResolver = this.pendingMessages.get(packet.messageId);
-      this.messageListeners.forEach((m) => m(packet.message, msgResolver));
+    if (packet.packetType === "message") {
+      this.messageListeners.forEach((m) => m(packet.message));
     } else if (packet.packetType === "control") {
       throw new Error("not implemented");
     }
+
+    const msgResolver = this.pendingMessages.get(packet.messageId);
+    msgResolver?.resolve(packet.message);
   }
 
   /**
@@ -200,7 +203,7 @@ export class WebSocketConnection<MessageType> {
    * @returns A promise that resolves when the message is answered.
    */
   public request(message: MessageType): Promise<MessageType | undefined> {
-    const messageId = uuid();
+    const messageId = randomUUID();
     const packet: Packet<MessageType> = {
       packetType: "message",
       messageId,
@@ -212,6 +215,7 @@ export class WebSocketConnection<MessageType> {
       this.pendingMessages.set(messageId, { resolve, reject });
       timeout = setTimeout(() => {
         reject(new Error("Timeout"));
+        this.pendingMessages.delete(messageId);
       }, this.timeoutMs);
     }).finally(() => clearTimeout(timeout));
 
@@ -227,10 +231,10 @@ export class WebSocketConnection<MessageType> {
    *
    * @param message the message to send
    */
-  public send(message: MessageType): void {
+  public send(message: MessageType, respondsTo: string = ""): void {
     const packet: Packet<MessageType> = {
       packetType: "message",
-      messageId: undefined,
+      messageId: randomUUID(),
       message,
     };
 

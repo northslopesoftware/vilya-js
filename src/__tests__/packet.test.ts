@@ -1,4 +1,5 @@
 import { JTDSchemaType } from "ajv/dist/core";
+import { randomUUID } from "crypto";
 import { Packet, buildSerializer } from "..";
 
 interface Message {
@@ -17,9 +18,12 @@ describe("Packet", () => {
   it("serializes and deserializes", () => {
     const packet: Packet<Message> = {
       packetType: "control",
+      messageId: randomUUID(),
       payload: { type: "ping" },
     };
+
     const json = serializePacket(packet);
-    expect(packet).toEqual(parsePacket(json));
+    const result = parsePacket(json);
+    expect(packet).toEqual(result);
   });
 });

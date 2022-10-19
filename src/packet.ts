@@ -2,6 +2,12 @@ import Ajv, { JTDSchemaType } from "ajv/dist/jtd";
 
 const ajv = new Ajv();
 
+interface BasePacket {
+  packetType: string;
+  messageId: string;
+  respondsTo?: string;
+}
+
 export type ControlPayload =
   | { type: "ping"; inert?: string }
   | { type: "pong"; inert?: string };
@@ -18,13 +24,15 @@ export const ControlPayloadSchema: JTDSchemaType<ControlPayload> = {
   },
 };
 
-export type ControlPacket = { packetType: "control"; payload: ControlPayload };
+export interface ControlPacket extends BasePacket {
+  packetType: "control";
+  payload: ControlPayload;
+}
 
-export type MessagePacket<MessageType> = {
+export interface MessagePacket<MessageType> extends BasePacket {
   packetType: "message";
-  messageId?: string;
   message: MessageType;
-};
+}
 
 export type Packet<MessageType> = ControlPacket | MessagePacket<MessageType>;
 
@@ -37,14 +45,19 @@ export const buildSerializer = <MessageType>(
       control: {
         properties: {
           payload: ControlPayloadSchema,
+          messageId: { type: "string" },
+        },
+        optionalProperties: {
+          respondsTo: { type: "string" },
         },
       },
       message: {
         properties: {
           message: MessageSchema,
+          messageId: { type: "string" },
         },
         optionalProperties: {
-          messageId: { type: "string" },
+          respondsTo: { type: "string" },
         },
       },
     },
