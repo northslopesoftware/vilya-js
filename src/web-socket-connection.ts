@@ -1,6 +1,6 @@
 import { ConnectionError, Packet } from ".";
 import wsWebSocket from "ws";
-import { randomUUID } from "crypto";
+import { v4 as uuid } from "uuid";
 
 export type MessageResolver<MessageType> = {
   resolve: (message?: MessageType) => void;
@@ -161,7 +161,7 @@ export class WebSocketConnection<MessageType> {
   protected ping() {
     this.transmit({
       packetType: "control",
-      messageId: randomUUID(),
+      messageId: uuid(),
       payload: { type: "ping" },
     });
   }
@@ -202,7 +202,7 @@ export class WebSocketConnection<MessageType> {
    * @returns A promise that resolves when the message is answered.
    */
   public request(message: MessageType): Promise<MessageType | undefined> {
-    const messageId = randomUUID();
+    const messageId = uuid();
     const packet: Packet<MessageType> = {
       packetType: "message",
       messageId,
@@ -233,7 +233,7 @@ export class WebSocketConnection<MessageType> {
   public send(message: MessageType, respondsTo?: string): void {
     const packet: Packet<MessageType> = {
       packetType: "message",
-      messageId: randomUUID(),
+      messageId: uuid(),
       respondsTo,
       message,
     };

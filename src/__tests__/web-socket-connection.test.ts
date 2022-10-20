@@ -11,7 +11,7 @@ describe("WebSocketConnection", () => {
   let server: WebSocket.Server;
 
   beforeAll(() => {
-    server = new WebSocket.Server({ port: 8088 });
+    server = new WebSocket.Server({ port: 8888 });
   });
 
   beforeEach(() => {
