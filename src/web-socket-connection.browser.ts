@@ -1,9 +1,8 @@
 import { ConnectionError } from ".";
-import WebSocket from "ws";
+import { v4 as uuid } from "uuid";
 import WebSocketConnection, { Parser, Serializer } from "./base-ws-conection";
-import { randomUUID } from "crypto";
 
-export class NodeWebSocketConnection<
+export class BrowserWebSocketConnection<
   MessageType
 > extends WebSocketConnection<MessageType> {
   /**
@@ -27,12 +26,12 @@ export class NodeWebSocketConnection<
   }
 
   /**
-   * Use crypto module to generate a UUID v4
+   * Return a random UUID (v4)
    *
-   * @returns a random UUID (v4)
+   * @returns UUID v4
    */
   protected getUUID() {
-    return randomUUID();
+    return uuid();
   }
 
   /**
@@ -60,11 +59,13 @@ export class NodeWebSocketConnection<
     this.heartbeatAlive = true;
     this.startHeartbeatTimer();
 
-    this.ws.on("message", (data: string) => this.onData(data));
-
+    // listen to the message event
+    this.ws.addEventListener("message", (event: MessageEvent<string>) =>
+      this.onData(event.data)
+    );
     // listen to the close event
-    this.ws.on("close", () => this.onClose());
+    this.ws.addEventListener("close", () => this.onClose());
   }
 }
 
-export default NodeWebSocketConnection;
+export default BrowserWebSocketConnection;

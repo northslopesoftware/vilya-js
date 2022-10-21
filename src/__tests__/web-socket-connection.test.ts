@@ -22,7 +22,7 @@ describe("WebSocketConnection", () => {
   });
 
   it("initializes", () => {
-    const socket = new WebSocketConnection<Message>();
+    new WebSocketConnection<Message>();
   });
 
   it("initializes with ws WebSocket", async () => {
@@ -33,7 +33,7 @@ describe("WebSocketConnection", () => {
   });
 
   it("accepts a message listener", () => {
-    const messageListener = (msg: Message) => {
+    const messageListener = () => {
       return;
     };
     const socket = new WebSocketConnection<Message>();
@@ -42,7 +42,7 @@ describe("WebSocketConnection", () => {
 
   it("accepts an async message listener", () => {
     // eslint-disable-next-line @typescript-eslint/require-await, @typescript-eslint/no-empty-function
-    const messageListener = async (msg: Message) => {};
+    const messageListener = async () => {};
     const socket = new WebSocketConnection<Message>();
     socket.addMessageListener(messageListener);
   });

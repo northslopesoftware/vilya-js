@@ -1,5 +1,5 @@
-import WebSocketConnection from "../web-socket-connection";
-import WebSocket from "ws";
+import WebSocketConnection from "../web-socket-connection.browser";
+import { Server } from "ws";
 
 interface Message {
   testProp: string;
@@ -10,10 +10,10 @@ const port = 8899;
 const serverUrl = `ws://localhost:${port}`;
 
 describe("WebSocketConnection", () => {
-  let server: WebSocket.Server;
+  let server: Server;
 
   beforeEach(() => {
-    server = new WebSocket.Server({ port });
+    server = new Server({ port });
     message = { testProp: "testValue" };
   });
 
@@ -22,39 +22,37 @@ describe("WebSocketConnection", () => {
   });
 
   it("initializes", () => {
-    const socket = new WebSocketConnection<Message>();
-    socket.disconnect();
+    new WebSocketConnection<Message>();
   });
 
   it("initializes with ws WebSocket", async () => {
     const ws = new WebSocket(serverUrl);
-    const socket = new WebSocketConnection<Message>({ ws });
+    new WebSocketConnection<Message>({ ws });
     await new Promise((resolve) => setTimeout(resolve, 1000));
-    socket.disconnect();
   });
 
   it("accepts a message listener", () => {
-    const messageListener = (msg: Message) => {
+    const messageListener = () => {
       return;
     };
     const socket = new WebSocketConnection<Message>();
     socket.addMessageListener(messageListener);
-    socket.disconnect();
   });
 
   it("accepts an async message listener", () => {
     // eslint-disable-next-line @typescript-eslint/require-await, @typescript-eslint/no-empty-function
-    const messageListener = async (msg: Message) => {};
+    const messageListener = async () => {};
     const socket = new WebSocketConnection<Message>();
     socket.addMessageListener(messageListener);
-    socket.disconnect();
   });
 
   it("routes messages to handlers", async () => {
     const messageHandler = jest.fn();
 
     server.on("connection", (serverSocket) => {
-      const wsc = new WebSocketConnection({ ws: serverSocket });
+      const wsc = new WebSocketConnection({
+        ws: serverSocket as unknown as WebSocket,
+      });
       wsc.send(message);
       wsc.disconnect();
     });
@@ -65,6 +63,5 @@ describe("WebSocketConnection", () => {
 
     await new Promise((resolve) => setTimeout(resolve, 1000));
     expect(messageHandler).toHaveBeenCalledWith(message);
-    socket.disconnect();
   });
 });
