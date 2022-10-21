@@ -1,4 +1,4 @@
-import { ConnectionError, Packet } from ".";
+import { ConnectionError, MessagePacket, Packet } from ".";
 import wsWebSocket from "ws";
 import { v4 as uuid } from "uuid";
 
@@ -15,6 +15,7 @@ export class WebSocketConnection<MessageType> {
   protected ws?: WebSocket | wsWebSocket;
   protected timeoutMs;
   protected url?: string;
+  protected inBrowser: boolean;
 
   // Just use JSON by default; meant to be swapped with ajv serialization
   protected serialize: Serializer<MessageType>;
@@ -49,6 +50,7 @@ export class WebSocketConnection<MessageType> {
     this.serialize = options?.serialize || JSON.stringify;
     this.parse = options?.parse || JSON.parse;
     this.ws = options?.ws;
+    this.inBrowser = typeof window !== "undefined";
 
     if (options?.url) {
       this.connect(options.url);
@@ -73,7 +75,6 @@ export class WebSocketConnection<MessageType> {
   protected startHeartbeatTimer() {
     this.heartbeatInterval = setInterval(() => {
       if (!this.heartbeatAlive) {
-        console.log("no heartbeat... closing socket");
         this.ws?.close();
         return;
       }
@@ -102,19 +103,25 @@ export class WebSocketConnection<MessageType> {
     }
 
     this.url = url;
-    this.ws = new WebSocket(url);
+    this.ws = this.inBrowser ? new WebSocket(url) : new wsWebSocket(url);
 
     // begin monitoring socket health
     this.heartbeatAlive = true;
     this.startHeartbeatTimer();
 
-    // listen to the message event
-    this.ws.addEventListener("message", (event: MessageEvent<string>) =>
-      this.onData(event.data)
-    );
+    if (this.inBrowser && this.ws instanceof WebSocket) {
+      // listen to the message event
+      this.ws.addEventListener("message", (event: MessageEvent<string>) =>
+        this.onData(event.data)
+      );
+      // listen to the close event
+      this.ws.addEventListener("close", () => this.onClose());
+    } else if (this.ws instanceof wsWebSocket) {
+      this.ws.on("message", (data: string) => this.onData(data));
 
-    // listen to the close event
-    this.ws.addEventListener("close", () => this.onClose());
+      // listen to the close event
+      this.ws.on("close", () => this.onClose());
+    }
   }
 
   /**
@@ -124,6 +131,7 @@ export class WebSocketConnection<MessageType> {
     this.url = undefined;
     this.ws?.close();
     this.ws = undefined;
+    this.heartbeatInterval?.unref();
   }
 
   /**
@@ -172,15 +180,21 @@ export class WebSocketConnection<MessageType> {
    * @param data Data received from the websocket
    */
   protected onData(data: string): void {
-    const packet: Packet<MessageType> | undefined = this.parse(data);
+    let packet: Packet<MessageType> | undefined;
+    try {
+      packet = this.parse(data);
+    } catch (e) {
+      return;
+    }
 
     if (packet === undefined) {
       throw new Error("Invalid packet received");
     }
 
     if (packet.packetType === "message") {
+      const msgPacket: MessagePacket<MessageType> = packet;
       this.messageListeners.forEach((m) => {
-        m(packet.message)?.catch(() => {
+        m(msgPacket.message)?.catch(() => {
           throw new Error("Handler failed");
         });
       });

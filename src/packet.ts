@@ -37,7 +37,7 @@ export interface MessagePacket<MessageType> extends BasePacket {
 export type Packet<MessageType> = ControlPacket | MessagePacket<MessageType>;
 
 export const buildSerializer = <MessageType>(
-  MessageSchema: JTDSchemaType<MessageType>
+  messageSchema: JTDSchemaType<MessageType>
 ) => {
   const PacketSchema = {
     discriminator: "packetType",
@@ -53,7 +53,7 @@ export const buildSerializer = <MessageType>(
       },
       message: {
         properties: {
-          message: MessageSchema,
+          message: messageSchema,
           messageId: { type: "string" },
         },
         optionalProperties: {

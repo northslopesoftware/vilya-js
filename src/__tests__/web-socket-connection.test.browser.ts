@@ -6,7 +6,7 @@ interface Message {
 }
 
 let message: Message;
-const port = 8888;
+const port = 8899;
 const serverUrl = `ws://localhost:${port}`;
 
 describe("WebSocketConnection", () => {
@@ -23,6 +23,7 @@ describe("WebSocketConnection", () => {
 
   it("initializes", () => {
     const socket = new WebSocketConnection<Message>();
+    socket.disconnect();
   });
 
   it("initializes with ws WebSocket", async () => {
@@ -38,6 +39,7 @@ describe("WebSocketConnection", () => {
     };
     const socket = new WebSocketConnection<Message>();
     socket.addMessageListener(messageListener);
+    socket.disconnect();
   });
 
   it("accepts an async message listener", () => {
@@ -45,6 +47,7 @@ describe("WebSocketConnection", () => {
     const messageListener = async (msg: Message) => {};
     const socket = new WebSocketConnection<Message>();
     socket.addMessageListener(messageListener);
+    socket.disconnect();
   });
 
   it("routes messages to handlers", async () => {
@@ -53,6 +56,7 @@ describe("WebSocketConnection", () => {
     server.on("connection", (serverSocket) => {
       const wsc = new WebSocketConnection({ ws: serverSocket });
       wsc.send(message);
+      wsc.disconnect();
     });
 
     const clientWs = new WebSocket(serverUrl);
@@ -61,7 +65,6 @@ describe("WebSocketConnection", () => {
 
     await new Promise((resolve) => setTimeout(resolve, 1000));
     expect(messageHandler).toHaveBeenCalledWith(message);
-    clientWs.close();
     socket.disconnect();
   });
 });
