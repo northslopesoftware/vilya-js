@@ -63,13 +63,15 @@ export const buildSerializer = <MessageType>(
     },
   };
 
-  const serializers: {
-    serializePacket: (message: Packet<MessageType>) => string;
-    parsePacket: (data: string) => Packet<MessageType> | undefined;
-  } = {
-    serializePacket: ajv.compileSerializer(PacketSchema),
-    parsePacket: ajv.compileParser(PacketSchema),
-  };
+  const serializers =
+    //  : {
+    //   serializePacket: (message: Packet<MessageType>) => string;
+    //   parsePacket: (data: string) => Packet<MessageType> | undefined;
+    // }
+    {
+      serializePacket: ajv.compileSerializer<Packet<MessageType>>(PacketSchema),
+      parsePacket: ajv.compileParser<Packet<MessageType>>(PacketSchema),
+    };
 
   return serializers;
 };

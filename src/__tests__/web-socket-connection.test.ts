@@ -1,4 +1,4 @@
-import WebSocketConnection from "../web-socket-connection";
+import { WebSocketConnection } from "../node-web-socket-connection";
 import WebSocket from "ws";
 
 interface Message {
@@ -59,8 +59,10 @@ describe("WebSocketConnection", () => {
     const socket = new WebSocketConnection(clientWs);
     socket.addMessageListener(messageHandler);
 
+    // wait one
     await new Promise((resolve) => setTimeout(resolve, 1000));
-    expect(messageHandler).toHaveBeenCalledWith(message);
+
+    expect(messageHandler).toHaveBeenCalledWith(message, expect.any(String));
     clientWs.close();
     socket.disconnect();
   });

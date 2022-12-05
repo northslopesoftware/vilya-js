@@ -1,6 +1,6 @@
-import { JTDSchemaType } from "ajv/dist/core";
+import { JTDSchemaType } from "ajv/dist/jtd";
 import { randomUUID } from "crypto";
-import { Packet, buildSerializer } from "..";
+import { Packet, buildSerializer } from "../packet";
 
 interface Message {
   message: string;

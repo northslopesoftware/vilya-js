@@ -1,4 +1,4 @@
-import WebSocketConnection from "../web-socket-connection.browser";
+import { WebSocketConnection } from "../browser-web-socket-connection";
 import { Server } from "ws";
 
 interface Message {
@@ -62,6 +62,6 @@ describe("WebSocketConnection", () => {
     socket.addMessageListener(messageHandler);
 
     await new Promise((resolve) => setTimeout(resolve, 1000));
-    expect(messageHandler).toHaveBeenCalledWith(message);
+    expect(messageHandler).toHaveBeenCalledWith(message, expect.any(String));
   });
 });

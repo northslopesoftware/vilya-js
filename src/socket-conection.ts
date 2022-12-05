@@ -1,5 +1,4 @@
-import { ConnectionError, MessagePacket, Packet } from ".";
-import type wsWebSocket from "ws";
+import { MessagePacket, Packet } from "./packet";
 
 export type MessageResolver<MessageType> = {
   resolve: (message?: MessageType) => void;
@@ -8,10 +7,19 @@ export type MessageResolver<MessageType> = {
 
 export type Parser<T> = (data: string) => Packet<T> | undefined;
 export type Serializer<T> = (t: Packet<T>) => string;
-export type MessageListener<T> = (message: T) => void | Promise<void>;
+export type MessageListener<T> = (
+  message: T,
+  messageId: string
+) => void | Promise<void>;
 
-export abstract class WebSocketConnection<MessageType> {
-  protected ws?: WebSocket | wsWebSocket;
+export interface SocketConnectionOptions<MessageType> {
+  url?: string;
+  timeoutMs?: number;
+  parse?: Parser<MessageType>;
+  serialize?: Serializer<MessageType>;
+}
+
+export abstract class SocketConnection<MessageType> {
   protected timeoutMs;
   protected url?: string;
 
@@ -37,25 +45,16 @@ export abstract class WebSocketConnection<MessageType> {
    * @param url (optional) The url to connect to. Empty url will connect later.
    * @param options (optional) Options object
    */
-  public constructor(options?: {
-    url?: string;
-    timeoutMs?: number;
-    parse?: Parser<MessageType>;
-    serialize?: Serializer<MessageType>;
-    ws?: WebSocket | wsWebSocket;
-  }) {
+  public constructor(options?: SocketConnectionOptions<MessageType>) {
     this.timeoutMs = options?.timeoutMs || 60000;
     this.serialize = options?.serialize || JSON.stringify;
     this.parse = options?.parse || JSON.parse;
-    this.ws = options?.ws;
   }
 
   /**
    * Getter for the connection status.
    */
-  public get isConnected() {
-    return this.ws?.readyState === WebSocket.OPEN;
-  }
+  public abstract get isConnected(): boolean;
 
   /**
    * Send a heartbeat ping every 30 seconds to avoid nginx closing connection.
@@ -68,7 +67,7 @@ export abstract class WebSocketConnection<MessageType> {
   protected startHeartbeatTimer() {
     this.heartbeatInterval = setInterval(() => {
       if (!this.heartbeatAlive) {
-        this.ws?.close();
+        this.disconnect();
         return;
       }
 
@@ -91,12 +90,7 @@ export abstract class WebSocketConnection<MessageType> {
   /**
    * Disconnect the websocket
    */
-  public disconnect() {
-    this.url = undefined;
-    this.ws?.close();
-    this.ws = undefined;
-    this.heartbeatInterval?.unref();
-  }
+  public abstract disconnect(): void;
 
   /**
    * Handler method for the udnerlying WebSocket "close" event.
@@ -141,35 +135,53 @@ export abstract class WebSocketConnection<MessageType> {
   }
 
   /**
+   * Send a control packet with a "pong" payload.
+   */
+  protected pong(respondsTo: string) {
+    this.transmit({
+      packetType: "control",
+      messageId: this.getUUID(),
+      payload: { type: "pong" },
+      respondsTo,
+    });
+  }
+
+  /**
    * Handler for the underlying WebSocket "message" event
    *
    * @param data Data received from the websocket
    */
-  protected onData(data: string): void {
+  protected onData(data: string | Buffer | ArrayBuffer | Buffer[]): void {
     let packet: Packet<MessageType> | undefined;
     try {
-      packet = this.parse(data);
+      packet = this.parse(data.toString());
     } catch (e) {
+      console.log(e);
       return;
     }
 
     if (packet === undefined) {
-      throw new Error("Invalid packet received");
+      return undefined;
     }
 
+    this.heartbeatAlive = true;
     if (packet.packetType === "message") {
       const msgPacket: MessagePacket<MessageType> = packet;
       this.messageListeners.forEach((m) => {
-        m(msgPacket.message)?.catch(() => {
-          throw new Error("Handler failed");
-        });
+        void m(msgPacket.message, msgPacket.messageId);
       });
     } else if (packet.packetType === "control") {
-      throw new Error("not implemented");
+      if (packet.payload.type === "ping") {
+        this.pong(packet.messageId);
+      }
     }
 
-    const msgResolver = this.pendingMessages.get(packet.messageId);
-    msgResolver?.resolve(packet.message);
+    if (packet.respondsTo) {
+      const msgResolver = this.pendingMessages.get(packet.respondsTo);
+      msgResolver?.resolve(
+        packet.packetType === "message" ? packet.message : undefined
+      );
+    }
   }
 
   /**
@@ -226,13 +238,7 @@ export abstract class WebSocketConnection<MessageType> {
    *
    * @param packet The packet to transmit.
    */
-  public transmit(packet: Packet<MessageType>): void {
-    if (this.ws === undefined) {
-      throw new ConnectionError("WebSocket is not connected.");
-    }
-    const data = this.serialize(packet);
-    this.ws.send(data);
-  }
+  public abstract transmit(packet: Packet<MessageType>): void;
 }
 
-export default WebSocketConnection;
+export default SocketConnection;
