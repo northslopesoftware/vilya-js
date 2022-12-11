@@ -64,4 +64,21 @@ describe("WebSocketConnection", () => {
     await new Promise((resolve) => setTimeout(resolve, 1000));
     expect(messageHandler).toHaveBeenCalledWith(message, expect.any(String));
   });
+
+  it("initializes disconnected", () => {
+    const wsc = new WebSocketConnection();
+    expect(wsc.isConnected).toBe(false);
+  });
+
+  it("runs onClose on disconnection", async () => {
+    const ws = new WebSocket(serverUrl);
+    const wsc = new WebSocketConnection<Message>({ ws });
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    expect(wsc.isConnected).toBe(true);
+    const closeListener = jest.fn();
+    wsc.onClose = closeListener;
+    ws.close();
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    expect(closeListener).toBeCalled();
+  });
 });

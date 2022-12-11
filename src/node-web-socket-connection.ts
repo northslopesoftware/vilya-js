@@ -112,7 +112,7 @@ export class WebSocketConnection<
    *
    * @param packet the packet to transmit
    */
-  public transmit(packet: Packet<MessageType>) {
+  protected transmit(packet: Packet<MessageType>) {
     if (this.ws === undefined) {
       throw new ConnectionError("WebSocket is not connected.");
     }

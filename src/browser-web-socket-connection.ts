@@ -33,6 +33,8 @@ export class WebSocketConnection<
       this.initSocket();
     }
 
+    this.shouldReconnect = options.shouldReconnect || true;
+
     if (options?.url) {
       this.connect(options.url);
     }
@@ -48,10 +50,15 @@ export class WebSocketConnection<
       return;
     }
 
+    this.ws.addEventListener("error", () => {
+      this.onClose();
+    });
+
     // listen to the message event
     this.ws.addEventListener("message", (event: MessageEvent<string>) =>
       this.onData(event.data)
     );
+
     // listen to the close event
     this.ws.addEventListener("close", () => this.onClose());
   }
@@ -76,21 +83,19 @@ export class WebSocketConnection<
    */
   public connect(url: string) {
     this.url = url;
-
-    if (this.ws) {
-      throw new ConnectionError(
-        "Tried connecting but socket already connected."
-      );
-    }
-
-    this.url = url;
     this.ws = new WebSocket(url);
 
     // begin monitoring socket health
     this.heartbeatAlive = true;
     this.startHeartbeatTimer();
 
-    this.initSocket();
+    this.ws.addEventListener("open", () => this.initSocket());
+
+    setTimeout(() => {
+      if (!this.isConnected && this.url) {
+        this.connect(this.url);
+      }
+    }, this.connectTimeout);
   }
 
   /**
@@ -115,7 +120,7 @@ export class WebSocketConnection<
    *
    * @param packet the packet to transmit
    */
-  public transmit(packet: Packet<MessageType>) {
+  protected transmit(packet: Packet<MessageType>) {
     if (this.ws === undefined) {
       throw new ConnectionError("WebSocket is not connected.");
     }

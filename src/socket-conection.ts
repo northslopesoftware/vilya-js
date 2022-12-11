@@ -14,14 +14,18 @@ export type MessageListener<T> = (
 
 export interface SocketConnectionOptions<MessageType> {
   url?: string;
-  timeoutMs?: number;
+  msgTimeout?: number;
+  connectTimeout?: number;
   parse?: Parser<MessageType>;
   serialize?: Serializer<MessageType>;
+  shouldReconnect?: boolean;
 }
 
 export abstract class SocketConnection<MessageType> {
-  protected timeoutMs;
+  protected msgTimeout;
+  protected connectTimeout;
   protected url?: string;
+  protected shouldReconnect: boolean;
 
   // Just use JSON by default; meant to be swapped with ajv serialization
   protected serialize: Serializer<MessageType>;
@@ -46,9 +50,11 @@ export abstract class SocketConnection<MessageType> {
    * @param options (optional) Options object
    */
   public constructor(options?: SocketConnectionOptions<MessageType>) {
-    this.timeoutMs = options?.timeoutMs || 60000;
+    this.msgTimeout = options?.msgTimeout || 60000;
     this.serialize = options?.serialize || JSON.stringify;
     this.parse = options?.parse || JSON.parse;
+    this.connectTimeout = options?.connectTimeout || 5000;
+    this.shouldReconnect = options?.shouldReconnect || false;
   }
 
   /**
@@ -100,8 +106,12 @@ export abstract class SocketConnection<MessageType> {
     clearInterval(this.heartbeatInterval);
     this.heartbeatInterval = undefined;
 
-    // Run all the close event callbacks.
-    this.closeListeners.forEach((c) => c());
+    if (this.shouldReconnect && this.url) {
+      this.connect(this.url);
+    } else {
+      // Run all the close event callbacks.
+      this.closeListeners.forEach((c) => c());
+    }
   }
 
   /**
@@ -207,7 +217,7 @@ export abstract class SocketConnection<MessageType> {
       timeout = setTimeout(() => {
         reject(new Error("Timeout"));
         this.pendingMessages.delete(messageId);
-      }, this.timeoutMs);
+      }, this.msgTimeout);
     }).finally(() => clearTimeout(timeout));
 
     this.transmit(packet);
@@ -238,7 +248,7 @@ export abstract class SocketConnection<MessageType> {
    *
    * @param packet The packet to transmit.
    */
-  public abstract transmit(packet: Packet<MessageType>): void;
+  protected abstract transmit(packet: Packet<MessageType>): void;
 }
 
 export default SocketConnection;
