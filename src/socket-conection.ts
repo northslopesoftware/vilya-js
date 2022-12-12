@@ -106,11 +106,11 @@ export abstract class SocketConnection<MessageType> {
     clearInterval(this.heartbeatInterval);
     this.heartbeatInterval = undefined;
 
+    // Run all the close event callbacks.
+    this.closeListeners.forEach((c) => c());
+
     if (this.shouldReconnect && this.url) {
       this.connect(this.url);
-    } else {
-      // Run all the close event callbacks.
-      this.closeListeners.forEach((c) => c());
     }
   }
 
