@@ -28,15 +28,14 @@ export class WebSocketConnection<
     const { ws, ...superOptions } = options;
     super(superOptions);
 
-    if (ws !== undefined) {
-      this.ws = ws;
-      this.initSocket();
-    }
-
+    // Default to reconnect
     this.shouldReconnect = options.shouldReconnect || true;
 
-    if (options?.url) {
-      this.connect(options.url);
+    if (ws) {
+      this.ws = ws;
+      this.initSocket();
+    } else if (this.url) {
+      this.connect(this.url);
     }
   }
 
@@ -89,7 +88,10 @@ export class WebSocketConnection<
     this.heartbeatAlive = true;
     this.startHeartbeatTimer();
 
-    this.ws.addEventListener("open", () => this.initSocket());
+    this.ws.addEventListener("open", () => {
+      this.initSocket();
+      this.onOpen();
+    });
 
     setTimeout(() => {
       if (!this.isConnected && this.url) {

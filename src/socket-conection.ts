@@ -56,6 +56,7 @@ export abstract class SocketConnection<MessageType> {
     this.parse = options?.parse || JSON.parse;
     this.connectTimeout = options?.connectTimeout || 5000;
     this.shouldReconnect = options?.shouldReconnect || false;
+    this.url = options?.url;
   }
 
   /**
@@ -99,6 +100,10 @@ export abstract class SocketConnection<MessageType> {
    */
   public abstract disconnect(): void;
 
+  protected onOpen() {
+    this.openListeners.forEach((l) => l());
+  }
+
   /**
    * Handler method for the udnerlying WebSocket "close" event.
    */
@@ -110,8 +115,12 @@ export abstract class SocketConnection<MessageType> {
     // Run all the close event callbacks.
     this.closeListeners.forEach((c) => c());
 
-    if (this.shouldReconnect && this.url) {
-      this.connect(this.url);
+    if (this.shouldReconnect) {
+      setTimeout(() => {
+        if (this.url) {
+          this.connect(this.url);
+        }
+      }, this.connectTimeout);
     }
   }
 
