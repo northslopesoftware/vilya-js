@@ -36,6 +36,7 @@ export abstract class SocketConnection<MessageType> {
   protected heartbeatAlive = false;
 
   // listeners for the close and message events
+  protected openListeners: (() => void)[] = [];
   protected closeListeners: (() => void)[] = [];
   protected messageListeners: MessageListener<MessageType>[] = [];
 
@@ -121,6 +122,14 @@ export abstract class SocketConnection<MessageType> {
    */
   public addMessageListener(listener: MessageListener<MessageType>) {
     this.messageListeners.push(listener);
+  }
+
+  /**
+   * Add a socket open listener to the WebSocket Connection.
+   *
+   */
+  public addOpenListener(listener: () => void) {
+    this.openListeners.push(listener);
   }
 
   /**
