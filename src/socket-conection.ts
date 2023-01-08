@@ -181,6 +181,8 @@ export abstract class SocketConnection<MessageType> {
    */
   protected onData(data: string | Buffer | ArrayBuffer | Buffer[]): void {
     let packet: Packet<MessageType> | undefined;
+    console.log(data);
+
     try {
       packet = this.parse(data.toString());
     } catch (e) {
@@ -233,7 +235,7 @@ export abstract class SocketConnection<MessageType> {
     const promise = new Promise<MessageType | undefined>((resolve, reject) => {
       this.pendingMessages.set(messageId, { resolve, reject });
       timeout = setTimeout(() => {
-        reject(new Error("Timeout"));
+        reject(new Error(`Timeout for message ${messageId}`));
         this.pendingMessages.delete(messageId);
       }, this.msgTimeout);
     }).finally(() => clearTimeout(timeout));
