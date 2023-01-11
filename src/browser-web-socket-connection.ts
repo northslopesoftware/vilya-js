@@ -1,4 +1,3 @@
-import { ConnectionError } from "./connection-error";
 import { Packet } from "./packet";
 import { v4 as uuid } from "uuid";
 import SocketConnection, { SocketConnectionOptions } from "./socket-conection";
@@ -29,7 +28,8 @@ export class WebSocketConnection<
     super(superOptions);
 
     // Default to reconnect
-    this.shouldReconnect = options.shouldReconnect || true;
+    this.shouldReconnect =
+      options.shouldReconnect === undefined ? true : options.shouldReconnect;
 
     if (ws) {
       this.ws = ws;
@@ -37,6 +37,13 @@ export class WebSocketConnection<
     } else if (this.url) {
       this.connect(this.url);
     }
+  }
+
+  /**
+   * Get WebSocket ready state.
+   */
+  public get status() {
+    return this.ws?.readyState;
   }
 
   /**
@@ -49,8 +56,8 @@ export class WebSocketConnection<
       return;
     }
 
-    this.ws.addEventListener("error", () => {
-      this.onClose();
+    this.ws.addEventListener("error", (e: Event) => {
+      this.errorListeners.forEach((l) => l(e.toString()));
     });
 
     // listen to the message event
@@ -59,7 +66,7 @@ export class WebSocketConnection<
     );
 
     // listen to the close event
-    this.ws.addEventListener("close", () => this.onClose());
+    this.ws.addEventListener("close", this.onClose.bind(this));
   }
 
   /**
@@ -81,6 +88,8 @@ export class WebSocketConnection<
    * @throws ConnectionError if websocket property already initialized
    */
   public connect(url: string) {
+    this.disconnect();
+
     this.url = url;
     this.ws = new WebSocket(url);
 
@@ -104,8 +113,10 @@ export class WebSocketConnection<
    * Disconnect the websocket, notify listeners, and clear heartbeat timer.
    */
   public disconnect() {
+    if (this.ws === undefined) return;
+
     this.url = undefined;
-    this.ws?.close();
+    this.ws.close();
     this.ws = undefined;
     clearInterval(this.heartbeatInterval);
   }
@@ -124,10 +135,11 @@ export class WebSocketConnection<
    */
   protected transmit(packet: Packet<MessageType>) {
     if (this.ws === undefined) {
-      throw new ConnectionError("WebSocket is not connected.");
+      return this.onError("WebSocket is not connected.");
     }
 
     const data = this.serialize(packet);
+
     this.ws.send(data);
   }
 }

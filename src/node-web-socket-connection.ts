@@ -38,6 +38,13 @@ export class WebSocketConnection<
   }
 
   /**
+   * Get WebSocket ready state.
+   */
+  public get status() {
+    return this.ws?.readyState;
+  }
+
+  /**
    * Use crypto module to generate a UUID v4
    *
    * @returns a random UUID (v4)

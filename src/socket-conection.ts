@@ -38,6 +38,7 @@ export abstract class SocketConnection<MessageType> {
   // listeners for the close and message events
   protected openListeners: (() => void)[] = [];
   protected closeListeners: (() => void)[] = [];
+  protected errorListeners: ((msg: string) => void)[] = [];
   protected messageListeners: MessageListener<MessageType>[] = [];
 
   // Messages that are awaiting a response
@@ -60,6 +61,21 @@ export abstract class SocketConnection<MessageType> {
   }
 
   /**
+   * Remove all listeners
+   */
+  public clearListeners() {
+    this.openListeners = [];
+    this.closeListeners = [];
+    this.messageListeners = [];
+    this.errorListeners = [];
+  }
+
+  /**
+   * Get the websocket ready state
+   */
+  public abstract get status(): number | undefined;
+
+  /**
    * Getter for the connection status.
    */
   public abstract get isConnected(): boolean;
@@ -75,7 +91,9 @@ export abstract class SocketConnection<MessageType> {
   protected startHeartbeatTimer() {
     this.heartbeatInterval = setInterval(() => {
       if (!this.heartbeatAlive) {
-        this.disconnect();
+        if (this.url && this.shouldReconnect) {
+          this.connect(this.url);
+        }
         return;
       }
 
@@ -102,6 +120,10 @@ export abstract class SocketConnection<MessageType> {
 
   protected onOpen() {
     this.openListeners.forEach((l) => l());
+  }
+
+  protected onError(err: string) {
+    this.errorListeners.forEach((l) => l(err));
   }
 
   /**
@@ -149,29 +171,42 @@ export abstract class SocketConnection<MessageType> {
     this.closeListeners.push(listener);
   }
 
+  /**
+   * Add a socket error listener
+   *
+   * @param listener the listener
+   */
+  public addErrorListener(listener: (msg: string) => void) {
+    this.errorListeners.push(listener);
+  }
+
   protected abstract getUUID(): string;
 
   /**
    * Send a control packet with a "ping" payload.
    */
   protected ping() {
-    this.transmit({
+    const pingPacket = {
       packetType: "control",
       messageId: this.getUUID(),
       payload: { type: "ping" },
-    });
+    } as const;
+
+    this.transmit(pingPacket);
   }
 
   /**
    * Send a control packet with a "pong" payload.
    */
   protected pong(respondsTo: string) {
-    this.transmit({
+    const pongPacket = {
       packetType: "control",
       messageId: this.getUUID(),
       payload: { type: "pong" },
       respondsTo,
-    });
+    } as const;
+
+    this.transmit(pongPacket);
   }
 
   /**
@@ -181,12 +216,11 @@ export abstract class SocketConnection<MessageType> {
    */
   protected onData(data: string | Buffer | ArrayBuffer | Buffer[]): void {
     let packet: Packet<MessageType> | undefined;
-    console.log(data);
 
     try {
       packet = this.parse(data.toString());
     } catch (e) {
-      console.log(e);
+      console.error(e);
       return;
     }
 
