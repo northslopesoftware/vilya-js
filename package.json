@@ -18,7 +18,7 @@
   "author": "James Kavanaugh (james@dangerginger.com)",
   "license": "UNLICENSED",
   "dependencies": {
-    "ajv": "^8.11.0",
+    "ajv": "8.12",
     "uuid": "^9.0.0",
     "ws": "^8.9.0"
   },
