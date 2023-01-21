@@ -93,6 +93,8 @@ export class WebSocketConnection<
 
     this.ws.on("message", this.onData.bind(this));
 
+    this.ws.on("error", console.error);
+
     // listen to the close event
     this.ws.on("close", () => this.onClose());
   }
