@@ -1,6 +1,6 @@
 {
   "name": "@northslope/vilya",
-  "version": "3.5.1",
+  "version": "3.5.2",
   "description": "Message passing layer for WebSockets",
   "main": "dist/node.js",
   "browser": "dist/browser.js",
