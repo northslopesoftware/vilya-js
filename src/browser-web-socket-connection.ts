@@ -57,6 +57,7 @@ export class WebSocketConnection<
     }
 
     this.ws.addEventListener("error", (e: Event) => {
+      console.error(e);
       this.errorListeners.forEach((l) => l(e.toString()));
     });
 
