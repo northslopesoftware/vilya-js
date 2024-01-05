@@ -1,5 +1,5 @@
-import { WebSocketConnection } from "../browser-web-socket-connection";
 import { Server } from "ws";
+import { WebSocketConnection } from "../browser-web-socket-connection";
 
 interface Message {
   testProp: string;
@@ -50,15 +50,14 @@ describe("WebSocketConnection", () => {
     const messageHandler = jest.fn();
 
     server.on("connection", (serverSocket) => {
-      const wsc = new WebSocketConnection({
+      const wsc = new WebSocketConnection<Message>({
         ws: serverSocket as unknown as WebSocket,
       });
       wsc.send(message);
-      wsc.disconnect();
     });
 
     const clientWs = new WebSocket(serverUrl);
-    const socket = new WebSocketConnection(clientWs);
+    const socket = new WebSocketConnection<Message>({ ws: clientWs });
     socket.addMessageListener(messageHandler);
 
     await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -76,7 +75,7 @@ describe("WebSocketConnection", () => {
     await new Promise((resolve) => setTimeout(resolve, 1000));
     expect(wsc.isConnected).toBe(true);
     const closeListener = jest.fn();
-    wsc.onClose = closeListener;
+    wsc.addCloseListener(closeListener);
     ws.close();
     await new Promise((resolve) => setTimeout(resolve, 1000));
     expect(closeListener).toBeCalled();

@@ -1,8 +1,8 @@
+import { randomUUID } from "crypto";
+import WebSocket from "ws";
 import { ConnectionError } from "./connection-error";
 import { Packet } from "./packet";
-import SocketConnection, { SocketConnectionOptions } from "./socket-conection";
-import WebSocket from "ws";
-import { randomUUID } from "crypto";
+import SocketConnection, { SocketConnectionOptions } from "./socket-connection";
 
 export interface WebSocketConnectionOptions<T>
   extends SocketConnectionOptions<T> {

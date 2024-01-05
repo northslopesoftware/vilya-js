@@ -1,6 +1,6 @@
-import { Packet } from "./packet";
 import { v4 as uuid } from "uuid";
-import SocketConnection, { SocketConnectionOptions } from "./socket-conection";
+import { Packet } from "./packet";
+import SocketConnection, { SocketConnectionOptions } from "./socket-connection";
 
 export interface WebSocketConnectionOptions<T>
   extends SocketConnectionOptions<T> {

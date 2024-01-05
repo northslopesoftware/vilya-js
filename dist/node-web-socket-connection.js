@@ -4,11 +4,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.WebSocketConnection = void 0;
-const connection_error_1 = require("./connection-error");
-const socket_conection_1 = __importDefault(require("./socket-conection"));
-const ws_1 = __importDefault(require("ws"));
 const crypto_1 = require("crypto");
-class WebSocketConnection extends socket_conection_1.default {
+const ws_1 = __importDefault(require("ws"));
+const connection_error_1 = require("./connection-error");
+const socket_connection_1 = __importDefault(require("./socket-connection"));
+class WebSocketConnection extends socket_connection_1.default {
     /**
      * Create a new WebSocketConnection.
      *

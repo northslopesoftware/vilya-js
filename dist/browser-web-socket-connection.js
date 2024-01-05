@@ -5,8 +5,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.WebSocketConnection = void 0;
 const uuid_1 = require("uuid");
-const socket_conection_1 = __importDefault(require("./socket-conection"));
-class WebSocketConnection extends socket_conection_1.default {
+const socket_connection_1 = __importDefault(require("./socket-connection"));
+class WebSocketConnection extends socket_connection_1.default {
     /**
      * Create a new WebSocketConnection.
      *

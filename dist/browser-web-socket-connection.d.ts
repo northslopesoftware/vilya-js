@@ -1,5 +1,5 @@
 import { Packet } from "./packet";
-import SocketConnection, { SocketConnectionOptions } from "./socket-conection";
+import SocketConnection, { SocketConnectionOptions } from "./socket-connection";
 export interface WebSocketConnectionOptions<T> extends SocketConnectionOptions<T> {
     ws?: WebSocket;
 }
