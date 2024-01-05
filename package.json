@@ -1,6 +1,6 @@
 {
   "name": "@northslope/vilya",
-  "version": "3.5.3",
+  "version": "3.5.4",
   "description": "Message passing layer for WebSockets",
   "main": "dist/node.js",
   "browser": "dist/browser.js",
@@ -16,7 +16,7 @@
     "url": "https://github.com/northslopesoftware/vilya-js"
   },
   "author": "James Kavanaugh (james@dangerginger.com)",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "dependencies": {
     "ajv": "8.12",
     "uuid": "^9.0.0",
